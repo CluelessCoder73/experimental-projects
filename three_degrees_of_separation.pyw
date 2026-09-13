@@ -104,9 +104,9 @@ def find_connection_bidirectional(start_name, end_name, max_degrees=3):
     
     LIMITATIONS & PERFORMANCE:
     - Capped at max_degrees=3 by default. 
-    - 1 degree  = ~2 to 5 API calls (~0.5 seconds)
-    - 2 degrees = ~15 to 40 API calls (~1 to 2 seconds)
-    - 3 degrees = ~100+ API calls (~3 to 6 seconds)
+    - 1 degree  = ~2 to 5 API calls (~5 seconds)
+    - 2 degrees = ~15 to 40 API calls (~1 minute)
+    - 3 degrees = ~100+ API calls (~8 minutes)
     - Increasing max_degrees past 3 can exponentially increase API calls and trigger rate limits.
     """
     start_id, start_real_name = get_actor_id(start_name)
@@ -142,7 +142,7 @@ def find_connection_bidirectional(start_name, end_name, max_degrees=3):
 class ConnectionApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Actor Connector")
+        self.root.title("Three Degrees of Separation")
         self.root.geometry("500x510")
         self.root.resizable(False, False)
 
@@ -216,7 +216,7 @@ class ConnectionApp:
     def show_help(self):
         """Displays the Help / About dialog window."""
         help_text = (
-            "ACTOR CONNECTOR - HELP & ABOUT\n\n"
+            "THREE DEGREES OF SEPARATION - HELP & ABOUT\n\n"
             "• How it Works:\n"
             "  Finds the shortest movie connection path between two actors using\n"
             "  The Movie Database (TMDB) live API.\n\n"
