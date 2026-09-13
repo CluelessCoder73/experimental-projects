@@ -2,6 +2,7 @@ import os
 import time
 import requests
 import threading
+import winsound  # Native Windows sound module
 import tkinter as tk
 from tkinter import ttk, messagebox
 from dotenv import load_dotenv
@@ -106,7 +107,7 @@ def find_connection_bidirectional(start_name, end_name, max_degrees=3):
     - Capped at max_degrees=3 by default. 
     - 1 degree  = ~2 to 5 API calls (~5 seconds)
     - 2 degrees = ~15 to 40 API calls (~1 minute)
-    - 3 degrees = ~100+ API calls (~8 minutes)
+    - 3 degrees = ~100+ API calls (~9 minutes)
     - Increasing max_degrees past 3 can exponentially increase API calls and trigger rate limits.
     """
     start_id, start_real_name = get_actor_id(start_name)
@@ -182,6 +183,13 @@ class ConnectionApp:
         self.result_box = tk.Text(root, height=8, width=55, font=("Arial", 10), state='disabled')
         self.result_box.pack(pady=10)
 
+    def play_success_sound(self):
+        """Plays standard Windows alert chime upon completion."""
+        try:
+            winsound.MessageBeep(winsound.MB_OK)
+        except Exception:
+            pass  # Fallback gracefully if sound device is unavailable
+
     def start_search(self):
         a1 = self.actor1_entry.get().strip()
         a2 = self.actor2_entry.get().strip()
@@ -205,6 +213,8 @@ class ConnectionApp:
             formatted_output = " -> \n".join(path)
             self.root.after(0, self.update_result_box, formatted_output)
         
+        # Trigger sound notification upon completion
+        self.root.after(0, self.play_success_sound)
         self.root.after(0, self.connect_btn.config, {"state": "normal"})
 
     def update_result_box(self, text):
