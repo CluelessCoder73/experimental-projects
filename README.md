@@ -10,6 +10,8 @@ A collection of lightweight Python scripts, utility tools, and API experiments.
 
 A GUI-based Python application that calculates the shortest movie path connecting any two actors using **The Movie Database (TMDB) API**.
 
+![image alt](https://github.com/CluelessCoder73/experimental-projects/blob/cd1b89294388fffaa9d2fd93b1a7d30d9c8519dd/three_degrees_of_separation.png)
+
 #### Features
 * **Bidirectional Search:** Fast graph traversal connecting actor credits to movie cast lists.
 * **Tkinter GUI:** Runs windowed without a terminal/console window using `.pyw`.
