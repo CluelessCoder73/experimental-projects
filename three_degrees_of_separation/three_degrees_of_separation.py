@@ -1,23 +1,89 @@
+# ==============================================================================
+# SCRIPT: Three Degrees of Separation (three_degrees_of_separation.py)
+# REPOSITORY: experimental-projects / three_degrees_of_separation /
+# ==============================================================================
+#
+# OVERVIEW:
+#   A desktop and mobile GUI app (Tkinter) that calculates the shortest movie 
+#   path connecting any two actors using The Movie Database (TMDB) API.
+#
+# HOW IT WORKS:
+#   - Uses Bidirectional Breadth-First Search (BFS) starting from both actors 
+#     simultaneously to meet in the middle, dramatically reducing API requests.
+#   - Automatically caches actor credits and movie cast lists in memory to avoid 
+#     redundant web calls.
+#   - Runs requests inside a background thread to keep the Tkinter UI responsive.
+#   - Plays a native Windows completion chime on desktop while safely skipping 
+#     sound on Android/Linux.
+#
+# ------------------------------------------------------------------------------
+# PREREQUISITES & DEPENDENCIES:
+# ------------------------------------------------------------------------------
+#   - Python Version: 3.8 or higher
+#   - API Key: Free TMDB API Key (v3 Key or v4 Bearer Token)
+#              Get one at: https://www.themoviedb.org/settings/api
+#   - Required Packages:
+#       pip install requests python-dotenv
+#
+# ------------------------------------------------------------------------------
+# ENVIRONMENT VARIABLE CONFIGURATION (.env / env.txt):
+# ------------------------------------------------------------------------------
+#   This script dynamically searches for your API key in the following order:
+#     1. 'env.txt' (Located in the same folder as this script)
+#        -> Recommended for Android / MEGAsync / restrictive file systems that 
+#           hide or restrict files starting with a dot ('.').
+#     2. '.env' (Located in the same folder as this script)
+#        -> Standard format for desktop/Windows environments.
+#
+#   File Contents Example:
+#     TMDB_API_KEY=a1b2c3d4e5f6g7h8i9j0
+#
+# ------------------------------------------------------------------------------
+# SEARCH LIMITS & PERFORMANCE ESTIMATES:
+# ------------------------------------------------------------------------------
+#   To remain well within TMDB rate limits and avoid Cloudflare 429 errors, searches 
+#   are hard-capped at 3 degrees, scanning top 10 movies per actor and top 10 
+#   billed cast members per movie.
+#
+#     - 1 Degree  (Direct co-stars) : ~2 to 5 API calls (~1 second)
+#     - 2 Degrees (1 movie step)    : ~15 to 40 API calls (~1 minute)
+#     - 3 Degrees (2 movie steps)   : ~100+ API calls (~10 minutes)
+#
+# ------------------------------------------------------------------------------
+# ANDROID SETUP GUIDE (PYDROID 3):
+# ------------------------------------------------------------------------------
+#   1. Install "Pydroid 3" and "Pydroid Repository Plugin" from Google Play Store.
+#   2. Open Pydroid 3 -> Menu (☰) -> Pip:
+#      - Ensure "Use prebuilt libraries repository" is checked.
+#      - Search and install: requests
+#      - Search and install: python-dotenv
+#   3. Transfer this script and your 'env.txt' file into the same folder on your phone.
+#   4. Open this script in Pydroid 3 and press the yellow Play ( ▶ ) button.
+#
+# ==============================================================================
+
 import os
 import time
 import requests
 import threading
-import winsound  # Native Windows sound module
+# Cross-platform sound handler
+try:
+    import winsound
+    HAS_WINSOUND = True
+except ImportError:
+    HAS_WINSOUND = False
 import tkinter as tk
 from tkinter import ttk, messagebox
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
-load_dotenv()
+# Try loading env.txt first (for restrictive mobile file systems), fallback to .env
+env_txt_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'env.txt')
+env_dot_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
 
-# ==============================================================================
-# CONFIGURATION & REQUIREMENTS
-# ==============================================================================
-# Requirements:
-#   1. Python 3.8+
-#   2. Packages: pip install requests python-dotenv
-#   3. A free TMDB API Key from https://www.themoviedb.org/settings/api
-# ==============================================================================
+if os.path.exists(env_txt_path):
+    load_dotenv(dotenv_path=env_txt_path)
+else:
+    load_dotenv(dotenv_path=env_dot_path)
 
 TMDB_API_KEY = os.getenv("TMDB_API_KEY", "YOUR_API_KEY_HERE").strip()
 BASE_URL = "https://api.themoviedb.org/3"
@@ -101,14 +167,7 @@ def get_movie_cast(movie_id):
 
 def find_connection_bidirectional(start_name, end_name, max_degrees=3):
     """
-    Finds the shortest movie path between two actors using Bidirectional BFS.
-    
-    LIMITATIONS & PERFORMANCE:
-    - Capped at max_degrees=3 by default. 
-    - 1 degree  = ~2 to 5 API calls (~5 seconds)
-    - 2 degrees = ~15 to 40 API calls (~1 minute)
-    - 3 degrees = ~100+ API calls (~9 minutes)
-    - Increasing max_degrees past 3 can exponentially increase API calls and trigger rate limits.
+    Finds the shortest movie path between two actors using Bidirectional BFS. Capped at max_degrees=3 by default. Increasing max_degrees past 3 can exponentially increase API calls and trigger rate limits.
     """
     start_id, start_real_name = get_actor_id(start_name)
     end_id, end_real_name = get_actor_id(end_name)
@@ -184,11 +243,12 @@ class ConnectionApp:
         self.result_box.pack(pady=10)
 
     def play_success_sound(self):
-        """Plays standard Windows alert chime upon completion."""
+        """Plays alert chime if supported by the OS."""
         try:
-            winsound.MessageBeep(winsound.MB_OK)
+            if HAS_WINSOUND:
+                winsound.MessageBeep(winsound.MB_OK)
         except Exception:
-            pass  # Fallback gracefully if sound device is unavailable
+            pass
 
     def start_search(self):
         a1 = self.actor1_entry.get().strip()
